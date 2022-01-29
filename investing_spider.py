@@ -7,6 +7,7 @@ using uc to bypass cloudflare solution
 https://github.com/ultrafunkamsterdam/undetected-chromedriver
 """
 import copy
+import json
 import logging
 import time
 
@@ -18,11 +19,16 @@ import undetected_chromedriver.v2 as uc
 
 
 logging.basicConfig(level=logging.INFO)
-coin_pair_file_path = 'stop_coins.conf'
+stop_coins_file_path = 'stop_coins.conf'
 homeurl = 'https://www.investing.com/crypto/currencies'
 baseurl = 'https://cn.investing.com/crypto/{coin}/{pair}-technical'
 options = webdriver.ChromeOptions()
 options.add_argument("--disable-blink-features=AutomationControlled")
+
+
+def read_stop_coin():
+    coin_pairs = open(stop_coins_file_path).read().strip().split('\n')
+    return set(coin_pairs)
 
 
 def crawl_coin_pairs():
@@ -36,6 +42,7 @@ def crawl_coin_pairs():
     coin_tr_eles = soup('table')[0]('tbody')[0].find_all('tr')
     assert len(coin_tr_eles) == 100, 'should be {} coins'.format(len(coin_tr_eles))
     coin_pairs = []
+    stop_coin_pairs = read_stop_coin()
     for coin_tr in coin_tr_eles:
         td_eles = coin_tr.find_all('td')
         rank = td_eles[0].string
@@ -46,6 +53,8 @@ def crawl_coin_pairs():
             continue
         coinid = td_eles[3].string
         pair = '{}-usd'.format(coinid.lower())
+        if pair in stop_coin_pairs:
+            continue
         url = baseurl.format(coin=symbol, pair=pair)
         coin_pairs.append((rank, pair, url))
     return coin_pairs
@@ -137,9 +146,12 @@ def main(batch_size=10, pool_size=10):
 
     localtime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     investing_spider_coin_pairs_signal['time'] = localtime
-    investing_spider_coin_pairs_signal['code'] = 'OK'
+    investing_spider_coin_pairs_signal['code'] = 0
+    output_file = 'database/{}.log'.format(localtime)
+    with open(output_file, 'w', encoding='utf-8') as fin:
+        json.dump(investing_spider_coin_pairs_signal, fin)
     logging.info(investing_spider_coin_pairs_signal)
-    return investing_spider_coin_pairs_signal
+    logging.info('Finish save {}.'.format(output_file))
 
 
 if __name__ == '__main__':
