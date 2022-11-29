@@ -3,3 +3,4 @@ undetected_chromedriver
 selenium
 beautifulsoup4
 threadpool
+flask-cors

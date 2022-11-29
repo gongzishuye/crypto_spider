@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # @time: 2022/1/29 3:38 下午
+from collections import OrderedDict
 import json
 import logging
 import glob
 import datetime
 
 from flask import Flask, jsonify
+from flask_cors import CORS
 
 
 logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
+app.config ['JSON_SORT_KEYS'] = False
+CORS(app, supports_credentials=True)
 
 
 @app.route('/coin_signal', methods=['POST', 'GET'])
@@ -23,7 +27,7 @@ def crawl_signal():
             files = glob.glob('database/{}/*'.format(yesterday))
         files.sort()
         target_file = files[-1]
-        result = json.load(open(target_file, encoding='utf-8'))
+        result = json.load(open(target_file, encoding='utf-8'), object_pairs_hook=OrderedDict)
         logging.info('resp [{}] for this request.'.format(target_file))
     except Exception as ex:
         logging.error(ex)

@@ -12,4 +12,6 @@ do
 done
 
 DATE_TIME=$(date +'%F%H%M%S')
+HOME=/root/services/crypto_spider
+cd $HOME
 nohup python3 investing_spider.py 2>&1>spider_${DATE_TIME}.log &
